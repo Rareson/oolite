@@ -6902,7 +6902,6 @@ static BOOL IsBehaviourHostile(OOBehaviour behaviour)
 			{
 				[shipAI message:@"AWAY_FROM_PLANET"];
 			}
-			[self setLastAegisLock:nil];
 		}
 
 		if (aegis_status != AEGIS_CLOSE_TO_ANY_PLANET)
@@ -7133,7 +7132,7 @@ NSComparisonResult ComparePlanetsBySurfaceDistance(id i1, id i2, void* context)
 		{
 			if([self lastAegisLock] == nil && !sunGoneNova)
 			{
-				[self setLastAegisLock:[UNIVERSE planet]];  // in case of a first launch.
+				[self setLastAegisLock:[UNIVERSE planet]];  // in case of a first launch from a near-planet station.
 			}
 			[self transitionToAegisNone];
 		}
@@ -7174,6 +7173,10 @@ NSComparisonResult ComparePlanetsBySurfaceDistance(id i1, id i2, void* context)
 		}
 		
 
+	}
+	if (result == AEGIS_NONE)
+	{
+		[self setLastAegisLock:nil];
 	}
 
 	aegis_status = result;	// put this here
