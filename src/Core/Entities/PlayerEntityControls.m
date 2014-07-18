@@ -1580,7 +1580,7 @@ static NSTimeInterval	time_last_frame;
 {
 	MyOpenGLView	*gameView = [UNIVERSE gameView];
 	BOOL			moving = NO;
-	double			cursor_speed = 10.0;
+	double			cursor_speed = [gameView isCtrlDown] ? 20.0 : 10.0;
 	GameController  *controller = [UNIVERSE gameController];
 	GuiDisplayGen	*gui = [UNIVERSE gui];
 	GUI_ROW_INIT(gui);
@@ -1606,6 +1606,7 @@ static NSTimeInterval	time_last_frame;
 	switch (gui_screen)
 	{
 		case GUI_SCREEN_LONG_RANGE_CHART:
+			cursor_speed *= 2.0;
 			if ([gameView isDown:key_advanced_nav_array])   //  '^' key
 			{
 				if (!pling_pressed)
@@ -1699,8 +1700,8 @@ static NSTimeInterval	time_last_frame;
 						double		vadjust = 51;
 						double		hscale = MAIN_GUI_PIXEL_WIDTH / 64.0;
 						double		vscale = MAIN_GUI_PIXEL_HEIGHT / 128.0;
-						cursor_coordinates.x = galaxy_coordinates.x + (maus.x * MAIN_GUI_PIXEL_WIDTH) / hscale;
-						cursor_coordinates.y = galaxy_coordinates.y + (maus.y * MAIN_GUI_PIXEL_HEIGHT + vadjust) / vscale;
+						cursor_coordinates.x = OOClamp_0_max_f(chart_centre_coordinates.x + (maus.x * MAIN_GUI_PIXEL_WIDTH) / hscale, 256.0);
+						cursor_coordinates.y = OOClamp_0_max_f(chart_centre_coordinates.y + (maus.y * MAIN_GUI_PIXEL_HEIGHT + vadjust) / vscale, 256.0);
 					}
 					if (gui_screen == GUI_SCREEN_LONG_RANGE_CHART)
 					{
@@ -1725,6 +1726,7 @@ static NSTimeInterval	time_last_frame;
 				{
 					[gameView resetTypedString];
 					cursor_coordinates = galaxy_coordinates;
+					chart_centre_coordinates = galaxy_coordinates;
 					found_system_seed = kNilRandomSeed;
 					[UNIVERSE findSystemCoordinatesWithPrefix:@""];
 					moving = YES;
@@ -1803,7 +1805,6 @@ static NSTimeInterval	time_last_frame;
 				}
 				else
 					pressedArrow =  pressedArrow == key_gui_arrow_up ? 0 : pressedArrow;
-				
 				if ((cursor_moving)&&(!moving))
 				{
 					// if found with a search string, don't recalculate! Required for overlapping systems, like Divees & Tezabi in galaxy 5
@@ -1811,12 +1812,26 @@ static NSTimeInterval	time_last_frame;
 							target_system_seed = [UNIVERSE findSystemAtCoords:cursor_coordinates withGalaxySeed:galaxy_seed];
 					cursor_coordinates.x = target_system_seed.d;
 					cursor_coordinates.y = target_system_seed.b;
-					if (gui_screen == GUI_SCREEN_LONG_RANGE_CHART) [self setGuiToLongRangeChartScreen];
-					if (gui_screen == GUI_SCREEN_SHORT_RANGE_CHART) [self setGuiToShortRangeChartScreen];
 				}
-				cursor_moving = moving;
+				if (cursor_coordinates.x - chart_centre_coordinates.x < -19)
+				{
+					chart_centre_coordinates.x = cursor_coordinates.x + 19;
+				}
+				else if (cursor_coordinates.x - chart_centre_coordinates.x > 19)
+				{
+					chart_centre_coordinates.x = cursor_coordinates.x - 19;
+				}
+				if (cursor_coordinates.y - chart_centre_coordinates.y < -37)
+				{
+					chart_centre_coordinates.y = cursor_coordinates.y + 37;
+				}
+				else if (cursor_coordinates.y - chart_centre_coordinates.y > 37)
+				{
+					chart_centre_coordinates.y = cursor_coordinates.y - 37;
+				}
 				if ((cursor_moving)&&(gui_screen == GUI_SCREEN_LONG_RANGE_CHART)) [self setGuiToLongRangeChartScreen]; // update graphics
 				if ((cursor_moving)&&(gui_screen == GUI_SCREEN_SHORT_RANGE_CHART)) [self setGuiToShortRangeChartScreen]; // update graphics
+				cursor_moving = moving;
 			}
 			
 		case GUI_SCREEN_SYSTEM_DATA:
